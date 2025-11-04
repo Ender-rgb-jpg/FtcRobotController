@@ -1,15 +1,18 @@
 package org.firstinspires.ftc.teamcode.mechanisms;
 
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class TestBenchServo {
     private Servo servoPos1;
     private Servo servoPos2;
+    private CRServo servoRot;
 
     public void init(HardwareMap hwMap) {
         servoPos1 = hwMap.get(Servo.class, "servo_pos1");
         servoPos2 = hwMap.get(Servo.class, "servo_pos2");
+        servoRot = hwMap.get(CRServo.class, "servo_rot");
     }
 
     public void setServo1Position(double angle) {
@@ -17,5 +20,9 @@ public class TestBenchServo {
     }
     public void setServo2Position(double angle) {
         servoPos2.setPosition(angle);
+    }
+
+    public void setServoRot(double power) {
+        servoRot.setPower(power);
     }
 }
