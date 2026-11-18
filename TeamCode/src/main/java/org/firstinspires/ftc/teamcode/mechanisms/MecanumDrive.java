@@ -5,61 +5,63 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 public class MecanumDrive {
 
-    private DcMotor rightBack, leftBack, rightFront, leftFront;
+    private DcMotor rightDrive, leftDrive, leftCatapult, rightCatapult;
 
     private IMU imu;
 
+    ElapsedTime time = new ElapsedTime();
+
     public void init(HardwareMap hwMap) {
 
-        rightBack = hwMap.get(DcMotor.class, "right_back_drive");
-        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightDrive = hwMap.get(DcMotor.class, "right_drive");
+        rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        rightFront = hwMap.get(DcMotor.class, "right_front_drive");
-        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftDrive = hwMap.get(DcMotor.class, "left_drive");
+        leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        leftBack = hwMap.get(DcMotor.class, "left_back_drive");
-        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightCatapult = hwMap.get(DcMotor.class, "right_catapult");
+        rightCatapult.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightCatapult.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        leftFront = hwMap.get(DcMotor.class, "left_front_drive");
-        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftCatapult = hwMap.get(DcMotor.class, "left_catapult");
+        leftCatapult.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftCatapult.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftCatapult.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
 
         imu = hwMap.get(IMU.class, "imu");
 
         RevHubOrientationOnRobot RevOrientation = new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
+                RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
+                RevHubOrientationOnRobot.UsbFacingDirection.DOWN
         );
 
         imu.initialize(new IMU.Parameters(RevOrientation));
     }
 
-    public void drive(double forward, double strafe, double rotate) {
-        double frontLeftPower = forward + strafe + rotate;
-        double backLeftPower = forward - strafe + rotate;
-        double frontRightPower = forward - strafe - rotate;
-        double backRightPower = forward + strafe - rotate;
+    public void drive(double forward, double rotate) {
+        double rightPower = forward - rotate;
+        double leftPower = forward + rotate;
 
         double maxPower = 1.0;
         double maxSpeed = 1.0;
 
-        maxPower = Math.max(maxPower, Math.abs(frontLeftPower));
-        maxPower = Math.max(maxPower, Math.abs(backLeftPower));
-        maxPower = Math.max(maxPower, Math.abs(frontRightPower));
-        maxPower = Math.max(maxPower, Math.abs(backRightPower));
+        maxPower = Math.max(maxPower, Math.abs(leftPower));
+        maxPower = Math.max(maxPower, Math.abs(rightPower));
 
-        leftFront.setPower(maxSpeed * (frontLeftPower / maxPower));
-        leftBack.setPower(maxSpeed * (backLeftPower / maxPower));
-        rightFront.setPower(maxSpeed * (frontRightPower / maxPower));
-        rightBack.setPower(maxSpeed * (backRightPower / maxPower));
+        leftDrive.setPower(maxSpeed * (leftPower / maxPower));
+        rightDrive.setPower(maxSpeed * (rightPower / maxPower));
     }
 
-    public void driveFieldRelative(double forward, double strafe, double rotate) {
+    /*
+    public void driveFieldRelative(double forward, double rotate) {
         double theta = Math.atan2(forward, strafe);
         double r = Math.hypot(strafe, forward);
 
@@ -72,12 +74,34 @@ public class MecanumDrive {
 
         this.drive(newForward, newStrafe, rotate);
     }
+     */
 
     public void stop(){
-        leftFront.setPower(0);
-        leftBack.setPower(0);
-        rightFront.setPower(0);
-        rightBack.setPower(0);
+        leftDrive.setPower(0);
+        rightDrive.setPower(0);
     }
 
+    public void driveForXSeconds(double forward, double rotate, double seconds, double elapsedTime) {
+        if (elapsedTime <= seconds + elapsedTime) {
+            drive(forward, rotate);
+        } else {
+            stop();
+        }
+    }
+
+    public void launch() {
+        double launchPower = -1.0;
+        rightCatapult.setPower(launchPower);
+        leftCatapult.setPower(launchPower);
+    }
+
+    public void resetCatapult() {
+        rightCatapult.setPower(1);
+        leftCatapult.setPower(1);
+    }
+
+    public void stopCatapult() {
+        rightCatapult.setPower(0);
+        leftCatapult.setPower(0);
+    }
 }
